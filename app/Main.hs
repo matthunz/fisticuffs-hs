@@ -4,5 +4,6 @@ import MyLib
 
 main :: IO ()
 main = run defaultConfig $ do
-  _ <- addCharacter
+  e <- addCharacter
+  animate e "run"
   return ()
