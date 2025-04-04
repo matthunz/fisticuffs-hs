@@ -27,7 +27,8 @@ executable fisticuffs
     ghc-options:      -Wall
     build-depends:
         base ^>=4.17.2.1,
-        fisticuffs
+        fisticuffs,
+        linear
 
 test-suite fisticuffs-test
     type:             exitcode-stdio-1.0
