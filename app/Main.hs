@@ -1,7 +1,6 @@
 module Main where
 
-import Linear
-import MyLib
+import Fisticuffs
 
 main :: IO ()
 main = run defaultConfig $ do

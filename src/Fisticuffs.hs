@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 
-module MyLib where
+module Fisticuffs where
 
 import Control.Concurrent
 import Control.Monad.State.Strict
@@ -127,67 +127,62 @@ draw = do
       draw
 
 drawCharacters :: Game ()
-drawCharacters = Game $ do
-  game <- get
+drawCharacters = do
+  game <- Game get
   let characters = gameCharacters game
-  characters' <-
-    traverse
-      ( \character -> do
-          let character' = updateCharacter game character
-              pos = fromIntegral <$> characterPosition character'
-              (row, col, character'') = case characterActionAnimation character' of
-                Just (s, duration) ->
-                  let a = characterAnimations character' Map.! s
-                      c =
-                        fromIntegral (gameTick game - characterAnimationStart character')
-                          `div` 100
-                   in if c > duration
-                        then
-                          let a' = characterAnimations character' Map.! characterAnimation character'
-                              c' =
-                                fromIntegral (gameTick game - characterAnimationStart character')
-                                  `div` 100
-                                  `mod` animationCols a'
-                           in ( animationRow a',
-                                c',
-                                character'
-                                  { characterActionAnimation = Nothing,
-                                    characterAnimationStart = gameTick game
-                                  }
-                              )
-                        else (animationRow a, fromIntegral c, character')
-                Nothing ->
-                  let a = characterAnimations character' Map.! characterAnimation character'
-                      c =
-                        fromIntegral (gameTick game - characterAnimationStart character')
-                          `div` 100
-                          `mod` animationCols a
-                   in (animationRow a, c, character')
-              V2 width height = characterSize character''
-              flipped = case characterDirection character'' of
-                East -> False
-                West -> True
-          copyEx
-            (gameRenderer game)
-            (characterTexture character'')
-            ( Just
-                ( Rectangle
-                    ( P $
-                        V2
-                          (fromIntegral $ col * width)
-                          (fromIntegral $ height * row)
-                    )
-                    (V2 (fromIntegral width) (fromIntegral height))
-                )
+  characters' <- traverse drawCharacter characters
+  Game . put $ game {gameCharacters = characters'}
+
+drawCharacter :: Character -> Game Character
+drawCharacter character = do
+  game <- Game get
+  let character' = updateCharacter game character
+      pos = fromIntegral <$> characterPosition character'
+      go a =
+        fromIntegral (gameTick game - characterAnimationStart character')
+          `div` 100
+          `mod` animationCols a
+      (row, col, character'') = case characterActionAnimation character' of
+        Just (s, duration) ->
+          let a = characterAnimations character' Map.! s
+              c =
+                fromIntegral (gameTick game - characterAnimationStart character') `div` 100
+           in if c > duration
+                then
+                  let a' = characterAnimations character' Map.! characterAnimation character'
+                   in ( animationRow a',
+                        go a',
+                        character'
+                          { characterActionAnimation = Nothing,
+                            characterAnimationStart = gameTick game
+                          }
+                      )
+                else (animationRow a, fromIntegral c, character')
+        Nothing ->
+          let a = characterAnimations character' Map.! characterAnimation character'
+           in (animationRow a, go a, character')
+      V2 width height = characterSize character''
+      flipped = case characterDirection character'' of
+        East -> False
+        West -> True
+  copyEx
+    (gameRenderer game)
+    (characterTexture character'')
+    ( Just
+        ( Rectangle
+            ( P $
+                V2
+                  (fromIntegral $ col * width)
+                  (fromIntegral $ height * row)
             )
-            (Just (Rectangle (P pos) (V2 1000 1000)))
-            1
-            Nothing
-            (V2 flipped False)
-          return character''
-      )
-      characters
-  put $ game {gameCharacters = characters'}
+            (V2 (fromIntegral width) (fromIntegral height))
+        )
+    )
+    (Just (Rectangle (P pos) (V2 1000 1000)))
+    1
+    Nothing
+    (V2 flipped False)
+  return character''
 
 updateCharacter :: GameState -> Character -> Character
 updateCharacter game character =
