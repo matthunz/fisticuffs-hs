@@ -15,7 +15,9 @@ library
     ghc-options:      -Wall
     build-depends:
         base ^>=4.17.2.1,
+        containers,
         sdl2,
+        sdl2-image,
         mtl
 
 executable fisticuffs

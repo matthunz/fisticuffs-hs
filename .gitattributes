@@ -1,0 +1,7 @@
+* text=auto
+
+*.hs text eol=lf
+*.cabal text eol=lf
+
+*.png binary
+*.ttf binary
